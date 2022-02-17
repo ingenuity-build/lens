@@ -42,7 +42,7 @@ func QueryDelegations(chainClient *client.ChainClient, delegator string, pageReq
 func QueryValidators(chainClient *client.ChainClient, pageReq *querytypes.PageRequest) (*types.QueryValidatorsResponse, error) {
 	queryClient := types.NewQueryClient(chainClient)
 	params := &types.QueryValidatorsRequest{
-		Status: status
+		Status: status,
 		Pagination:    pageReq,
         }
 
