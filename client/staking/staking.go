@@ -38,3 +38,18 @@ func QueryDelegations(chainClient *client.ChainClient, delegator string, pageReq
 
 	return res, nil
 }
+
+func QueryValidators(chainClient *client.ChainClient, pageReq *querytypes.PageRequest) (*types.QueryValidatorsResponse, error) {
+	queryClient := types.NewQueryClient(chainClient)
+	params := &types.QueryValidatorsRequest{
+		Status: status
+		Pagination:    pageReq,
+        }
+
+	res, err := queryClient.Validators(context.Bankground(), params)
+	if err != nil {
+                return nil, err
+        }
+
+        return res, nil
+}
