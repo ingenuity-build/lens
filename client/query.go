@@ -2,7 +2,10 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
@@ -12,9 +15,9 @@ import (
 	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 )
 
-// queryBalanceWithAddress returns the amount of coins in the relayer account with address as input
+// QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 // TODO add pagination support
-func (cc *ChainClient) queryBalanceWithAddress(address string) (sdk.Coins, error) {
+func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error) {
 	p := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: DefaultPageRequest()}
 	queryClient := bankTypes.NewQueryClient(cc)
 
@@ -26,7 +29,7 @@ func (cc *ChainClient) queryBalanceWithAddress(address string) (sdk.Coins, error
 	return res.Balances, nil
 }
 
-func (cc *ChainClient) queryLatestHeight() (int64, error) {
+func (cc *ChainClient) QueryLatestHeight() (int64, error) {
 	stat, err := cc.RPCClient.Status(context.Background())
 	if err != nil {
 		return -1, err
@@ -67,12 +70,12 @@ func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI,
 
 // QueryBalanceWithDenomTraces is a helper function for query balance
 func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
-	coins, err := cc.queryBalanceWithAddress(cc.MustEncodeAccAddr(address))
+	coins, err := cc.QueryBalanceWithAddress(cc.MustEncodeAccAddr(address))
 	if err != nil {
 		return nil, err
 	}
 
-	h, err := cc.queryLatestHeight()
+	h, err := cc.QueryLatestHeight()
 	if err != nil {
 		return nil, err
 	}
@@ -210,6 +213,36 @@ func (cc *ChainClient) QueryTotalSupply(ctx context.Context, pageReq *query.Page
 
 func (cc *ChainClient) QueryDenomsMetadata(ctx context.Context, pageReq *query.PageRequest) (*bankTypes.QueryDenomsMetadataResponse, error) {
 	return bankTypes.NewQueryClient(cc).DenomsMetadata(ctx, &bankTypes.QueryDenomsMetadataRequest{Pagination: pageReq})
+}
+
+// QueryTxs returns an array of transactions given a tag
+func (cc *ChainClient) QueryTxs(page, limit int, events []string) ([]*sdk.TxResponse, error) {
+	if len(events) == 0 {
+		return nil, errors.New("must declare at least one event to search")
+	}
+
+	if page <= 0 {
+		return nil, errors.New("page must greater than 0")
+	}
+
+	if limit <= 0 {
+		return nil, errors.New("limit must greater than 0")
+	}
+
+	res, err := cc.RPCClient.TxSearch(context.Background(), strings.Join(events, " AND "), true, &page, &limit, "")
+	if err != nil {
+		return nil, err
+	}
+
+	outTxs := []*sdk.TxResponse{}
+	for _, tx := range res.Txs {
+		outTx, err := cc.mkTxResult(tx)
+		if err != nil {
+			return []*sdk.TxResponse{}, err
+		}
+		outTxs = append(outTxs, outTx)
+	}
+	return outTxs, nil
 }
 
 func DefaultPageRequest() *querytypes.PageRequest {
