@@ -13,11 +13,23 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	"github.com/tendermint/tendermint/rpc/coretypes"
 )
 
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 // TODO add pagination support
-func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error) {
+func (cc *ChainClient) queryBalanceWithAddress(address string) (sdk.Coins, error) {
+	res, err := cc.QueryAllBalances(address)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Balances, nil
+}
+
+// QueryAllBalances returns the amount of coins in the relayer account with address as input
+// TODO add pagination support
+func (cc *ChainClient) QueryAllBalances(address string) (*bankTypes.QueryAllBalancesResponse, error) {
 	p := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: DefaultPageRequest()}
 	queryClient := bankTypes.NewQueryClient(cc)
 
@@ -26,7 +38,7 @@ func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error
 		return nil, err
 	}
 
-	return res.Balances, nil
+	return res, nil
 }
 
 func (cc *ChainClient) QueryLatestHeight() (int64, error) {
@@ -70,7 +82,7 @@ func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI,
 
 // QueryBalanceWithDenomTraces is a helper function for query balance
 func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
-	coins, err := cc.QueryBalanceWithAddress(cc.MustEncodeAccAddr(address))
+	coins, err := cc.queryBalanceWithAddress(cc.MustEncodeAccAddr(address))
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +228,7 @@ func (cc *ChainClient) QueryDenomsMetadata(ctx context.Context, pageReq *query.P
 }
 
 // QueryTxs returns an array of transactions given a tag
-func (cc *ChainClient) QueryTxs(page, limit int, events []string) ([]*sdk.TxResponse, error) {
+func (cc *ChainClient) QueryTxs(page, limit int, events []string) (*coretypes.ResultTxSearch, error) {
 	if len(events) == 0 {
 		return nil, errors.New("must declare at least one event to search")
 	}
@@ -234,15 +246,7 @@ func (cc *ChainClient) QueryTxs(page, limit int, events []string) ([]*sdk.TxResp
 		return nil, err
 	}
 
-	outTxs := []*sdk.TxResponse{}
-	for _, tx := range res.Txs {
-		outTx, err := cc.mkTxResult(tx)
-		if err != nil {
-			return []*sdk.TxResponse{}, err
-		}
-		outTxs = append(outTxs, outTx)
-	}
-	return outTxs, nil
+	return res, nil
 }
 
 func DefaultPageRequest() *querytypes.PageRequest {
