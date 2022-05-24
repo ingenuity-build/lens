@@ -4,6 +4,7 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
 	"github.com/strangelove-ventures/lens/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -235,4 +236,16 @@ func (q *Query) ABCIInfo() (*coretypes.ResultABCIInfo, error) {
 func (q *Query) ABCIQuery(path string, data string, prove bool) (*coretypes.ResultABCIQuery, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
 	return ABCIQueryRPC(q, path, data, prove)
+}
+
+// IBC Queries
+
+func (q *Query) ibc_ClientParams() (*clienttypes.QueryClientParamsResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ClientParamsRPC(q)
+}
+
+func (q *Query) ibc_ClientState(clientId string) (*clienttypes.QueryClientParamsResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ClientParamsRPC(q, string)
 }
