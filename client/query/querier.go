@@ -240,12 +240,12 @@ func (q *Query) ABCIQuery(path string, data string, prove bool) (*coretypes.Resu
 
 // IBC Queries
 
-func (q *Query) ibc_ClientParams() (*clienttypes.QueryClientParamsResponse, error) {
+func (q *Query) Ibc_ClientParams() (*clienttypes.QueryClientParamsResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
 	return ibc_ClientParamsRPC(q)
 }
 
-func (q *Query) ibc_ClientState(clientId string) (*clienttypes.QueryClientParamsResponse, error) {
+func (q *Query) Ibc_ClientState(clientId string) (*clienttypes.QueryClientStateResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return ibc_ClientParamsRPC(q, string)
+	return ibc_ClientStateRPC(q, clientId)
 }
